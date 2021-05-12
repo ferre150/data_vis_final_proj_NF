@@ -143,4 +143,36 @@ ggdotchart(ave_ounces, x = "name.y", y = "avg",
 
 style 
 
+#_________Circle Packing Plot___________________________________________________
+
+install.packages('packcircles')
+
+
+library(packcircles)
+library(ggplot2)
+library(viridis)
+
+
+# Select Data
+
+
+# Generate the layout. sizetype can be area or radius, following your preference on what to be proportional to value.
+packing <- circleProgressiveLayout(types$Freq, sizetype='area')
+data <- cbind(types, packing)
+dat.gg <- circleLayoutVertices(packing, npoints=100)
+data$text_size <- types$Freq+1000
+t= as.character(data$Var1)
+data$names = gsub(' ', '\n',t)
+data$text_size = c(5,11,4.5,6,5.5,6,8,3.5,3,4,8,5) 
+# Basic color customization
+ggplot() + 
+  geom_polygon(data = dat.gg, aes(x, y, group = id, fill=as.factor(id)), colour = "black", alpha = 0.6) +
+  scale_fill_manual(values =carto_pal(n=12,name='Safe') ) +
+  geom_text(data = data, aes(x, y, label = names),size = data$text_size) +
+  scale_size_continuous(range = c(1,4)) +
+  theme_void() + 
+  theme(legend.position="none") +
+  coord_equal()
   
+
+
