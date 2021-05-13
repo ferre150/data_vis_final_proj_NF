@@ -146,12 +146,12 @@ style
 #_________Circle Packing Plot___________________________________________________
 
 install.packages('packcircles')
-
+install.packages('cartography')
 
 library(packcircles)
 library(ggplot2)
 library(viridis)
-
+library(cartography)
 
 # Select Data
 
@@ -163,9 +163,9 @@ dat.gg <- circleLayoutVertices(packing, npoints=100)
 data$text_size <- types$Freq+1000
 t= as.character(data$Var1)
 data$names = gsub(' ', '\n',t)
-data$text_size = c(5,11,4.5,6,5.5,6,8,3.5,3,4,8,5) 
+data$text_size = c(5,11,4.5,6,5.5,6,8,3.5,4,4,8,5) 
 # Basic color customization
-ggplot() + 
+p <- ggplot() + 
   geom_polygon(data = dat.gg, aes(x, y, group = id, fill=as.factor(id)), colour = "black", alpha = 0.6) +
   scale_fill_manual(values =carto_pal(n=12,name='Safe') ) +
   geom_text(data = data, aes(x, y, label = names),size = data$text_size) +
@@ -173,6 +173,83 @@ ggplot() +
   theme_void() + 
   theme(legend.position="none") +
   coord_equal()
+
+p
+
+plot(1,1)
+legendCirclesSymbols(pos = "left",
+                     var = c(min(data$Freq), max(data$Freq)),
+                     inches = 0.2, style = "e",col = 'white',
+                     title.txt = 'Number of Unique Beers',cex = 4,
+                     title.cex =0.9,values.cex = 0.9,frame = TRUE)
+
+
+##___________________California Beer Map_______________________________________
+
+Ballast_loc = c('1540 Disneyland Dr #201, Anaheim, CA 92802',33.809304396052035, -117.92266960913166,
+                '110 N Marina Dr Long Beach, CA', 33.74663640725254, -118.11474485146265,
+                '9045 Carroll Way San Diego, CA', 32.888127658680595, -117.15789787272077,
+                '2215 India St San Diego, CA', 32.727797042165214, -117.169632070876,
+                '5401 Linda Vista Rd #406 San Diego, CA', 32.76686042757759, -117.19530681689929,
+)
+
+my_array = t(array(Ballast_loc,dim = c(3,length(Ballast_loc))))
+
+mydf = as.data.frame(my_array)
+
+mydf = cbind(mydf,rep('Ballast Point Brewing Company',length(Ballast_loc)))
+names(mydf) = c('Address','long','lat','brewery')
+
+install_github('UrbanInstitute/urbnmapr')
+library(tidyverse)
+library(urbnmapr)
+
+ggplot() + 
+  geom_polygon(data = urbnmapr::states, mapping = aes(x = long, y = lat, group = group),
+               fill = 'grey', color = 'white') +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45)
+
+household_data <- left_join(countydata, counties, by = "county_fips") 
+
+household_data %>%
+  ggplot(aes(long, lat, group = group, fill = medhhincome)) +
+  geom_polygon(color = NA) +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+  labs(fill = "Median Household Income")
+
+
+countydata %>% 
+  left_join(counties, by = "county_fips") %>% 
+  filter(state_name =="California") %>% 
+  ggplot(mapping = aes(long, lat, group = group, fill = horate)) +
+  geom_polygon(color = "#ffffff", size = .25) +
+  geom_polygon(data = mydf, aes(long, lat, group = brewery, fill=as.factor(brewery)), colour = "black", alpha = 0.6)
   
 
+library(mapproj)
 
+states_map<-map_data("state")
+
+cal_map = states_map[states_map$region == 'california',]
+
+basemap<-ggplot(cal_map,aes(x=long,y=lat))
+
+# Color map sequential increasing with colorspace
+basemap + scale_fill_continuous_sequential(palette="Viridis")
+
+
+lon <- mydf$long  #fake longitude vector
+lat <- mydf$lat  #fake latitude vector
+
+
+map(database= "state",regions = c('CA'), col="#f1a662", fill=TRUE)
+points(lon,lat, pch=20, cex=10, col="red")  #plot converted points
+
+
+ggplot(data = world) +
+  geom_sf() +
+  geom_sf(data = counties, fill = NA, color = gray(.5)) +
+  geom_sf(data = flcities) +
+  geom_text(data = flcities, aes(x = lng, y = lat, label = city), 
+            size = 3.9, col = "black", fontface = "bold") +
+  coord_sf(xlim = c(-88, -78), ylim = c(24.5, 33), expand = FALSE)
