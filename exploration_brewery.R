@@ -253,3 +253,71 @@ ggplot(data = world) +
   geom_text(data = flcities, aes(x = lng, y = lat, label = city), 
             size = 3.9, col = "black", fontface = "bold") +
   coord_sf(xlim = c(-88, -78), ylim = c(24.5, 33), expand = FALSE)
+
+##_______________Beer Type Matrix______________________________________________
+install.packages(c("fastDummies", "recipes"))
+
+library(fastDummies)
+library(recipes)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+# or simply just use: library(tidyverse)
+
+
+type_brew = final_beer[,c('X','style','name.y')]
+head(type_brew)
+
+df <- data.frame(file_name = c("1_jan_2018.csv",
+                               "2_feb_2018.csv", 
+                               "3_mar_2018.csv"))
+
+types_split = type_brew[grep('/',type_brew$style),]
+types_fine = type_brew[-grep('/',type_brew$style),]
+
+temp = as.data.frame(type_brew[6,])
+
+for(x in 1:dim(types_split)[1]){
+  temp2 = strsplit(types_split$style[x],'/')
+  for(y in 1:length(temp2[[1]])){
+    temp3 = as.data.frame(cbind(temp2[[1]][y],types_split$name.y[x]))
+    names(temp3) = c("style", "name.y")
+    temp = rbind(temp,temp3)
+  }
+}
+
+temp$style = gsub(" ", "", temp$style, fixed = TRUE)
+
+
+sep_styles = rbind(types_fine,temp)
+
+uniq_styles = unique(sep_styles)
+uniq_styles$style = gsub(" ", "", uniq_styles$style, fixed = TRUE)
+uniq_styles$style = as.factor(uniq_styles$style)
+
+summary(uniq_styles)
+
+dumb = dummy_cols(uniq_styles,select_columns = 'style')
+
+dumb = dumb[,2:24]
+
+
+sep_df = lapply(unique(dumb$name.y), function(x) dumb[dumb$name.y == x,])
+
+grouped_df = lapply(sep_df, function(x) cbind(x[1,1],t(colSums(x[,2:23]))))
+
+final_style = as.data.frame(do.call(rbind,grouped_df))
+names(final_style)  = gsub("style_", "", names(final_style), fixed = TRUE)
+names(final_style) = c('Breweries',names(final_style)[2:23])
+
+final_style %>% 
+  as.data.frame() %>%
+  mutate(id=rownames(.),
+         Labels = as.factor(Breweries)) %>%
+  pivot_longer(cols=names(final_style[,2:23])) %>%
+  filter(value==1) %>%
+  ggplot(aes(x=id, y=name, color=Breweries)) + 
+  geom_point(size =7)+scale_color_manual(values =carto_pal(n=12,name='Safe') ) +
+  theme_pubr(legend = 'right')
+  
+scale_color_manual()
