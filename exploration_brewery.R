@@ -255,13 +255,14 @@ ggplot(data = world) +
   coord_sf(xlim = c(-88, -78), ylim = c(24.5, 33), expand = FALSE)
 
 ##_______________Beer Type Matrix______________________________________________
-install.packages(c("fastDummies", "recipes"))
+install.packages(c("fastDummies", "recipes",'magrittr'))
 
 library(fastDummies)
 library(recipes)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
+library(magrittr)
 # or simply just use: library(tidyverse)
 
 
@@ -310,6 +311,11 @@ final_style = as.data.frame(do.call(rbind,grouped_df))
 names(final_style)  = gsub("style_", "", names(final_style), fixed = TRUE)
 names(final_style) = c('Breweries',names(final_style)[2:23])
 
+
+DOY <- c(1, 2, 3, 4, 5)
+Max <- c(200, 225, 250, 275, 300)
+sample <- data.frame(DOY, Max)
+
 final_style %>% 
   as.data.frame() %>%
   mutate(id=rownames(.),
@@ -318,6 +324,9 @@ final_style %>%
   filter(value==1) %>%
   ggplot(aes(x=id, y=name, color=Breweries)) + 
   geom_point(size =7)+scale_color_manual(values =carto_pal(n=12,name='Safe') ) +
-  theme_pubr(legend = 'right')
-  
-scale_color_manual()
+  theme_pubr(legend = 'right')+ grids(linetype = "solid",size = 4)+
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
