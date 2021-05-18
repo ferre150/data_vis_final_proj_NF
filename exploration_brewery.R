@@ -13,15 +13,22 @@ library(ggpubr)
 library(RColorBrewer)
 library(rcartocolor)
 
+
+#_________Read_in_and_clean_data________________________________________________
+
+# read in csv that contains beer info
 beers = read.csv('data/beers.csv')
 
+#read in csv with brewery info
 breweries = read.csv('data/breweries.csv')
 
+# all cities in San Diego county
 sd_county = c('Carlsbad', 'Chula Vista', 'Coronado', 'Del Mar', 'El Cajon',
               'Encinitas', 'Escondido', 'Imperial Beach', 'La Mesa',
               'Lemon Grove', 'National City', 'Oceanside', 'Poway', 'San Diego',
               'San Marcos', 'Santee', 'Solana Beach', 'Vista')
 
+# all cities in OC
 orange_county = c('Aliso Viejo', 'Anaheim', 'Brea', 'Buena Park', 'Costa Mesa',
                   'Cypress', 'Dana Point', 'Fountain Valley', 'Fullerton',
                   'Garden Grove', 'Huntington Beach', 'Irvine', 'Laguna Beach',
@@ -31,6 +38,7 @@ orange_county = c('Aliso Viejo', 'Anaheim', 'Brea', 'Buena Park', 'Costa Mesa',
                   'San Clemente', 'San Juan Capistrano', 'Santa Ana', 'Seal Beach',
                   'Stanton', 'Tustin', 'Villa Park', 'Westminster', 'Yorba Linda')
 
+# all cities in LA county
 los_ang_county = c('Agoura Hills', 'Alhambra', 'Arcadia', 'Artesia', 'Avalon',
                    'Azusa', 'Baldwin Park', 'Bell', 'Bellflower', 'BSell Gardens',
                    'Beverly Hills', 'Bradbury', 'Burbank', 'Calabasas', 'Carson',
@@ -53,95 +61,115 @@ los_ang_county = c('Agoura Hills', 'Alhambra', 'Arcadia', 'Artesia', 'Avalon',
                    'Vernon','Walnut','West Covina','West Hollywood',
                    'Westlake Village','Whittier')
 
+# concatenate LA and SD
 sd_los_al = c(los_ang_county,sd_county)
 
-ca_breweries = breweries[breweries$state == ' CA',]
+# subset the Breweries to just the CA
+ca_breweries = breweries[breweries$state == ' CA',] 
 
+# subset the breweries by cities in OC
 oc_breweries = ca_breweries[ca_breweries$city %in% orange_county,]
 
+# subset the breweries by cities in SD
 sd_brew = ca_breweries[ca_breweries$city %in% sd_county,]
 
+# subset the breweries by cities in LA
 los_ang_brew = ca_breweries[ca_breweries$city %in% los_ang_county,]
 
+# # subset the breweries by cities in SD and LA
 sd_los_al_brew = ca_breweries[ca_breweries$city %in% sd_los_al,]
 
 names(sd_los_al_brew) = c('brewery_id',"name" , "city",  "state")
 
+#subset beers by brewery ids in SD and LA
 my_beer = beers[beers$brewery_id %in% sd_los_al_brew$brewery_id,]
 
+# merge the Beers with their brewery
 final_beer = merge(my_beer,sd_los_al_brew, by = 'brewery_id' )
 
+#remove breweries with less than three beers
 remove_brewery = c("Butcher's Brewing", 'Claremont Craft Ales', 
                    'Mother Earth Brew Company')
 
 final_beer = final_beer[!(final_beer$name.y %in% remove_brewery),]
 
+
+#_________Create_a_waffle_plot_of_the_unique_beers______________________________
+
+# the number of beers per brewery
 types = as.data.frame(table(final_beer$name.y))
-
-table(final_beer$style)
-
+#table(final_beer$style)
 
 # Waffle plot 
 
-carto_pal(n=12,name='Safe')
-brewer.pal(n=9,name = 'YlOrRd')
-
-
-library(extrafont)
-
-load.fontawesome(font = "fontawesome-webfont.ttf")
-load.fontawesome(font = "fontawesome-webfont.otf")
-
-
-font_import('/Users/noahferrel/Library/Fonts')
-y
-extrafont::fonttable() %>% 
-  dplyr::as_tibble() %>% 
-  dplyr::filter(grepl("Awesom", FamilyName)) %>% 
-  select(FamilyName, FontName, fontfile)
-
 waffle(types, rows = 7,colors = carto_pal(n=12,name='Safe'))
 
-#+
-  scale_fill_manual(values =carto_pal(n=12,name='Safe') )
-  scale_fill_brewer(palette = 'Paired',name = 'Breweries') #title = "Beers per Brewery"
 
+#_________Create_a_box_plot_of_the_IBU_and_abv__________________________________
+
+# Cast the IBU to numeric
 final_beer$ibu = as.numeric(final_beer$ibu)
-  
-# Box Plot
+
+# Box Plot ABV
 
 par(mar=c(15,5,1,1))
-boxplot(abv~name.y,data=final_beer,col = carto_pal(n=12,name='Safe'),las=2,xlab = "")+mtext("Breweries", side=1, line=14)#+
-  scale_fill_manual(values =carto_pal(n=12,name='Safe') ) #title = "ABV per Brewery"
+boxplot(abv~name.y,data=final_beer,col = carto_pal(n=12,name='Safe'),
+        las=2,xlab = "") + mtext("Breweries", side=1, line=14)#+
 
+# Box Plot IBU
 par(mar=c(20,5,1,1))
-boxplot(ibu~name.y,data=na.omit(final_beer),col = carto_pal(n=12,name='Safe'),las=2,xlab = "")+mtext("Breweries", side=1, line=14) #title = "ABV per Brewery"
+boxplot(ibu~name.y,data=na.omit(final_beer),col = carto_pal(n=12,name='Safe')
+        ,las=2,xlab = "")+mtext("Breweries", side=1, line=14) #title = "ABV per Brewery"
 
-
+#_________PLot_the_Average_Size_of-the_Breweries__________________________________
 ave_ounces = final_beer %>% 
   group_by(name.y) %>%
   summarise(avg = mean(ounces))
 
-ave_ounces
+ave_ounces = as.data.frame(ave_ounces)
 
 brewer.pal(n=12,name = 'Paired')
 
-adj_color = c("#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#FF7F00", "#CAB2D6", "#6A3D9A", "black", "#B15928")
+adj_color = c("#DDCC77", "#999933", "#44AA99", "#AA4499", "#661100", "#88CCEE",
+              "#332288", "#888888", "#882255", "#CC6677", "#6699CC", "#117733")
 
 ggdotchart(ave_ounces, x = "name.y", y = "avg",
            color = "name.y",                                # Color by groups
-           palette = carto_pal(n=12,name='Safe'),#adj_color, #brewer.pal(n=12,name = 'Paired'), # Custom color palette
+           palette = adj_color,#carto_pal(n=12,name='Safe'),       # 
            sorting = "descending",                       # Sort value in descending order
            rotate = TRUE,                                # Rotate vertically
            dot.size = 4,                                 # Large dot size
            y.text.col = TRUE,                            # Color y text by groups
            xlab = "Average Ounces",
-           ggtheme = theme_pubr()                        # ggplot2 theme
-)+ theme_cleveland() + scale_fill_manual(values = carto_pal(n=12,name='Safe'))      
+           ggtheme = theme_pubr(legend = 'none')                        # ggplot2 theme
+)+ theme_cleveland()
+
+#_________Violin_plot_IBU_and_ABV___________________________________________________
+
+abv_df = final_beer[c('abv','name.y')]
+names(abv_df) = c('abv',"Breweries")
+
+ibu_df = na.omit(final_beer[c('ibu','name.y')])
+names(ibu_df) = c('ibu',"Breweries")
+
+ounce_df = final_beer[c('ounces','name.y')]
+names(ounce_df) = c('ounces',"Breweries")
+
+ggplot(abv_df,aes(Breweries,abv,fill = Breweries))+geom_violin()+ coord_flip()+ 
+  geom_boxplot(width=0.1) + scale_fill_manual(values = carto_pal(n=12,name='Safe'),
+                                              breaks = unique(abv_df$Breweries)) +
+  theme_pubr(legend = 'right')
 
 
+ggplot(ibu_df,aes(Breweries,ibu,fill = Breweries))+geom_violin()+ coord_flip()+ 
+  geom_boxplot(width=0.1) + scale_fill_manual(values = carto_pal(n=12,name='Safe'),
+                                              breaks = unique(abv_df$Breweries)) +
+  theme_pubr(legend = 'right')
 
-style 
+ggplot(ounce_df,aes(Breweries,ounces,fill = Breweries))+geom_violin()+ coord_flip()+ 
+  geom_boxplot(width=0.1) + scale_fill_manual(values = carto_pal(n=12,name='Safe'),
+                                              breaks = unique(abv_df$Breweries)) +
+  theme_pubr(legend = 'right')
 
 #_________Circle Packing Plot___________________________________________________
 
@@ -167,7 +195,7 @@ data$text_size = c(5,11,4.5,6,5.5,6,8,3.5,4,4,8,5)
 # Basic color customization
 p <- ggplot() + 
   geom_polygon(data = dat.gg, aes(x, y, group = id, fill=as.factor(id)), colour = "black", alpha = 0.6) +
-  scale_fill_manual(values =carto_pal(n=12,name='Safe') ) +
+  scale_fill_manual(values =carto_pal(n=12,name='Safe'),breaks = c(5,12,1,6,7,2,10,4,9,3,11,8)) +
   geom_text(data = data, aes(x, y, label = names),size = data$text_size) +
   scale_size_continuous(range = c(1,4)) +
   theme_void() + 
@@ -194,37 +222,9 @@ Ballast_loc = c('1540 Disneyland Dr #201, Anaheim, CA 92802',33.809304396052035,
 )
 
 my_array = t(array(Ballast_loc,dim = c(3,length(Ballast_loc))))
-
 mydf = as.data.frame(my_array)
-
 mydf = cbind(mydf,rep('Ballast Point Brewing Company',length(Ballast_loc)))
 names(mydf) = c('Address','long','lat','brewery')
-
-install_github('UrbanInstitute/urbnmapr')
-library(tidyverse)
-library(urbnmapr)
-
-ggplot() + 
-  geom_polygon(data = urbnmapr::states, mapping = aes(x = long, y = lat, group = group),
-               fill = 'grey', color = 'white') +
-  coord_map(projection = "albers", lat0 = 39, lat1 = 45)
-
-household_data <- left_join(countydata, counties, by = "county_fips") 
-
-household_data %>%
-  ggplot(aes(long, lat, group = group, fill = medhhincome)) +
-  geom_polygon(color = NA) +
-  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
-  labs(fill = "Median Household Income")
-
-
-countydata %>% 
-  left_join(counties, by = "county_fips") %>% 
-  filter(state_name =="California") %>% 
-  ggplot(mapping = aes(long, lat, group = group, fill = horate)) +
-  geom_polygon(color = "#ffffff", size = .25) +
-  geom_polygon(data = mydf, aes(long, lat, group = brewery, fill=as.factor(brewery)), colour = "black", alpha = 0.6)
-  
 
 library(mapproj)
 
@@ -263,15 +263,9 @@ library(tidyr)
 library(dplyr)
 library(ggplot2)
 library(magrittr)
-# or simply just use: library(tidyverse)
-
 
 type_brew = final_beer[,c('X','style','name.y')]
 head(type_brew)
-
-df <- data.frame(file_name = c("1_jan_2018.csv",
-                               "2_feb_2018.csv", 
-                               "3_mar_2018.csv"))
 
 types_split = type_brew[grep('/',type_brew$style),]
 types_fine = type_brew[-grep('/',type_brew$style),]
@@ -289,7 +283,6 @@ for(x in 1:dim(types_split)[1]){
 
 temp$style = gsub(" ", "", temp$style, fixed = TRUE)
 
-
 sep_styles = rbind(types_fine,temp)
 
 uniq_styles = unique(sep_styles)
@@ -302,7 +295,6 @@ dumb = dummy_cols(uniq_styles,select_columns = 'style')
 
 dumb = dumb[,2:24]
 
-
 sep_df = lapply(unique(dumb$name.y), function(x) dumb[dumb$name.y == x,])
 
 grouped_df = lapply(sep_df, function(x) cbind(x[1,1],t(colSums(x[,2:23]))))
@@ -312,10 +304,6 @@ names(final_style)  = gsub("style_", "", names(final_style), fixed = TRUE)
 names(final_style) = c('Breweries',names(final_style)[2:23])
 
 
-DOY <- c(1, 2, 3, 4, 5)
-Max <- c(200, 225, 250, 275, 300)
-sample <- data.frame(DOY, Max)
-
 final_style %>% 
   as.data.frame() %>%
   mutate(id=rownames(.),
@@ -323,7 +311,8 @@ final_style %>%
   pivot_longer(cols=names(final_style[,2:23])) %>%
   filter(value==1) %>%
   ggplot(aes(x=id, y=name, color=Breweries)) + 
-  geom_point(size =7)+scale_color_manual(values =carto_pal(n=12,name='Safe') ) +
+  geom_point(size =7)+scale_color_manual(values =carto_pal(n=12,name='Safe'),
+                                         breaks = unique(abv_df$Breweries)) +
   theme_pubr(legend = 'right')+ grids(linetype = "solid",size = 4)+
   theme(
     panel.grid.major.x = element_blank(),
