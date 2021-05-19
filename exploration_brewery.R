@@ -214,45 +214,121 @@ legendCirclesSymbols(pos = "left",
 
 ##___________________California Beer Map_______________________________________
 
+Brewery_list = unique(final_beer$name.y)
+
 Ballast_loc = c('1540 Disneyland Dr #201, Anaheim, CA 92802',33.809304396052035, -117.92266960913166,
                 '110 N Marina Dr Long Beach, CA', 33.74663640725254, -118.11474485146265,
                 '9045 Carroll Way San Diego, CA', 32.888127658680595, -117.15789787272077,
                 '2215 India St San Diego, CA', 32.727797042165214, -117.169632070876,
-                '5401 Linda Vista Rd #406 San Diego, CA', 32.76686042757759, -117.19530681689929,
+                '5401 Linda Vista Rd #406 San Diego, CA', 32.76686042757759, -117.19530681689929
 )
 
-my_array = t(array(Ballast_loc,dim = c(3,length(Ballast_loc))))
-mydf = as.data.frame(my_array)
-mydf = cbind(mydf,rep('Ballast Point Brewing Company',length(Ballast_loc)))
-names(mydf) = c('Address','long','lat','brewery')
+Golden_loc = c('5410 W San Fernando Rd Los Angeles, CA 90039', 34.15045778311418, -118.2744569668166,
+                '2210 E Orangewood Ave Anaheim, CA 92806', 33.795534416604376, -117.8852393772423,
+                '16390 Pacific Coast Hwy, Huntington Beach, CA 92649', 33.72454742044249, -118.07665106179581,
+               '201 World Way, Los Angeles, CA 90045',33.941517321230855, -118.40184643831698,
+               '317 S Broadway, Los Angeles, CA 90013', 34.05100553082239, -118.24950049795332
+)
+
+Pizza_loc = c('135 N. Highway 101 Solana Beach, CA 90725', 32.9929293357069, -117.27218712755574,
+               '301 N El Camino Real, San Clemente, CA 92672', 33.42882747718038, -117.61347012267696,
+              '571 Carlsbad Village Dr, Carlsbad, CA 92008', 33.15982597634919, -117.3479485019722,
+              '1956 Bacon St, San Diego, CA 92107', 32.74794596392057, -117.2502737731884,
+              '2730 Gateway Rd, Carlsbad, CA 92009', 33.12861452372483, -117.25018511141947
+)
+
+Tail_loc = c('6827 AIROSO AVE SAN DIEGO, CALIFORNIA', 32.777251870318935, -117.05161556882209)
+
+Hess_loc = c('3725 Greenwood St, San Diego, CA 92110', 33.62819290735436, -117.9202140503766)
+
+Saint_loc = c('9550 Distribution Ave, San Diego, CA 92121', 32.880459755617046, -117.16348736002583,
+              '978 N Coast Hwy 101, Encinitas, CA 92024', 33.0658373625825, -117.30293762433492
+              )
+
+Manz_loc = c('10151 Prospect Ave, Santee, CA 92071', 32.83074108282011, -116.97659159042266)
+
+Mike_loc = c('805 Ocean Ln, Imperial Beach, CA 91932', 32.58073494815664, -117.13208374104312,
+             '7955 Silverton Ave #1201, San Diego, CA 92126', 32.88950196712233, -117.14986286002568,
+             '3812 Grim Ave, San Diego, CA 92104', 32.74771757271175, -117.12834821629032,
+             '4893 Voltaire St, San Diego, CA 92107', 32.75080446471145, -117.24490919552974,
+             '2313 Oak Grove Rd, Walnut Creek, CA 94598', 37.928719748407396, -122.01666830221723,
+             '879 W Harbor Dr Suite W14-E, San Diego, CA 92101', 32.70939666807193, -117.17193912205761
+             )
+
+Dude_loc = c('395 Santa Monica Place, #304 Santa Monica, CA 90401', 34.01386053115494, -118.49397782906449,
+             '405 West Center Street Promenade Anaheim, CA 92805', 33.833296180317284, -117.91801916100611,
+             '1840 W 208th St Torrance, CA 90501', 33.841649197588715, -118.3115418017758,
+             'Westfield Valencia Town Center, 24250 Town Center Dr #190, Santa Clarita, CA 91355', 34.41681649980409, -118.55982716438426,
+             '6615 Hollywood Blvd Los Angeles, CA 90028', 34.10184465179344, -118.33403191534236
+             )
+
+Monkey_loc = c('1517 30th St, San Diego, CA 92102', 32.721681981543426, -117.13008561574287)
+
+Mission_loc = c('1441 L St, San Diego, CA 92101', 32.70720278166529, -117.15159683825293)
+
+
+
+lis_to_df = function(list,Brewery_name){
+  my_array = t(array(list,dim = c(3,length(list)/3)))
+  mydf = as.data.frame(my_array)
+  mydf = cbind(mydf,rep(Brewery_name,length(list)/3))
+  names(mydf) = c('Address','long','lat','brewery')
+  mydf$long = as.numeric(mydf$long)
+  mydf$lat = as.numeric(mydf$lat)
+  return(mydf)
+}
+
+bal_df = lis_to_df(Ballast_loc,"Ballast Point Brewing Company")
+gol_df =lis_to_df(Golden_loc,"Golden Road Brewing")
+piz_df = lis_to_df(Pizza_loc, "Pizza Port")
+modern_df = lis_to_df(Modern_loc,'Modern Times')
+tail_df = lis_to_df(Tail_loc,"TailGate Beer")
+hess_df =lis_to_df(Hess_loc,"Hess")
+saint_df = lis_to_df(Saint_loc, "Saint Archer Brewery")
+manz_df = lis_to_df(Manz_loc,'Manzanita Brewing Company')
+mike_df = lis_to_df(Mike_loc,"Mike Hess Brewing Company")
+dude_df =lis_to_df(Dude_loc,"The Dudes' Brewing Company")
+monk_df = lis_to_df(Monkey_loc, "Monkey Paw Pub & Brewery")
+miss_df = lis_to_df(Mission_loc,'Mission Brewery')
 
 library(mapproj)
-
-states_map<-map_data("state")
-
-cal_map = states_map[states_map$region == 'california',]
-
-basemap<-ggplot(cal_map,aes(x=long,y=lat))
-
-# Color map sequential increasing with colorspace
-basemap + scale_fill_continuous_sequential(palette="Viridis")
+library(maps)
 
 
-lon <- mydf$long  #fake longitude vector
-lat <- mydf$lat  #fake latitude vector
+?map()
 
+#_______________________________________________________________________________
+map(database= "state",regions = c('CA'), col="#f9e5b0",fill = T, # #f1a662
+    xlim = c(-119, -116.5), ylim = c(32.5, 34.3),boundary = T)
+map.axes()	
 
-map(database= "state",regions = c('CA'), col="#f1a662", fill=TRUE)
-points(lon,lat, pch=20, cex=10, col="red")  #plot converted points
+# Ballast Point Locations
+points(bal_df$lat,bal_df$long,col = '#DDCC77', cex = 1,pch = 19)
+#Golden Road Locations 
+points(gol_df$lat,gol_df$long,col = '#AA4499', cex = 1,pch = 19)
+#Pizza Port Locations
+points(piz_df$lat,piz_df$long,col = '#882255', cex = 1,pch = 19)
+#Modern Times Beer Location
+points(modern_df$lat,modern_df$long,col = '#332288', cex = 1,pch = 19)
+# TailGate Locations
+points(tail_df$lat,tail_df$long,col = '#6699CC', cex = 1,pch = 19)
+#Hess Locations 
+points(hess_df$lat,hess_df$long,col = '#661100', cex = 1,pch = 19)
+#Saint Locations
+points(saint_df$lat,saint_df$long,col = '#44AA99', cex = 1,pch = 19)
+#Manz Location
+points(manz_df$lat,manz_df$long,col = '#999933', cex = 1,pch = 19)
+#Mike hess Locations 
+points(mike_df$lat,mike_df$long,col = '#88CCEE', cex = 1,pch = 19)
+#The dudes' Locations
+points(dude_df$lat,dude_df$long,col = '#CC6677', cex = 1,pch = 19)
+#Monkey Locations
+points(monk_df$lat,monk_df$long,col = '#888888', cex = 1,pch = 19)
+#Mission Location
+points(miss_df$lat,miss_df$long,col = '#117733', cex = 1,pch = 19)
 
+points(-117.84997346379632,33.79454772568703,col = 'black',cex =1,pch=19)
 
-ggplot(data = world) +
-  geom_sf() +
-  geom_sf(data = counties, fill = NA, color = gray(.5)) +
-  geom_sf(data = flcities) +
-  geom_text(data = flcities, aes(x = lng, y = lat, label = city), 
-            size = 3.9, col = "black", fontface = "bold") +
-  coord_sf(xlim = c(-88, -78), ylim = c(24.5, 33), expand = FALSE)
 
 ##_______________Beer Type Matrix______________________________________________
 install.packages(c("fastDummies", "recipes",'magrittr'))
@@ -319,3 +395,13 @@ final_style %>%
     panel.grid.minor.x = element_blank()
   )
 
+#_____________extra
+
+
+my_array = t(array(Ballast_loc,dim = c(3,length(Ballast_loc)/3)))
+mydf = as.data.frame(my_array)
+mydf = cbind(mydf,rep('Ballast Point Brewing Company',length(Ballast_loc)))
+names(mydf) = c('Address','long','lat','brewery')
+
+mydf$long = as.numeric(mydf$long)
+mydf$lat = as.numeric(mydf$lat)
