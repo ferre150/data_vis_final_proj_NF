@@ -1,24 +1,29 @@
-install.packages("ggplot2")
-install.packages('dplyr')
-install.packages("ggpubr")
-install.packages('rcartocolor')
+install.packages(c("fastDummies", "recipes",'magrittr','cartography',
+                   'packcircles','rcartocolor',"ggpubr",'dplyr',"ggplot2"))
 
-library(devtools)
-install_github("hrbrmstr/waffle")
-
+library(packcircles)
 library(ggplot2)
+library(viridis)
+library(cartography)
 library(waffle)
 library(dplyr)
 library(ggpubr)
 library(RColorBrewer)
 library(rcartocolor)
-
+library(mapproj)
+library(maps)
+library(fastDummies)
+library(recipes)
+library(tidyr)
+library(magrittr)
 
 #_________Read_in_and_clean_data________________________________________________
 
 # read in csv that contains beer info
 beers = read.csv('data/beers.csv')
 
+# dir for plots to be generated
+plot_dir = 'plot'
 #read in csv with brewery info
 breweries = read.csv('data/breweries.csv')
 
@@ -100,42 +105,50 @@ final_beer = final_beer[!(final_beer$name.y %in% remove_brewery),]
 types = as.data.frame(table(final_beer$name.y))
 #table(final_beer$style)
 
-# Waffle plot 
+# Waffle plot
 
+png('plots/waffle.png')
 waffle(types, rows = 7,colors = carto_pal(n=12,name='Safe'))
-
+dev.off()
 
 #_________Create_a_box_plot_of_the_IBU_and_abv__________________________________
 
 # Cast the IBU to numeric
 final_beer$ibu = as.numeric(final_beer$ibu)
+final_beer$abv = as.numeric(final_beer$abv)
 
 # Box Plot ABV
-
+png('plots/abv_boxplot.png')
 par(mar=c(15,5,1,1))
 boxplot(abv~name.y,data=final_beer,col = carto_pal(n=12,name='Safe'),
-        las=2,xlab = "") + mtext("Breweries", side=1, line=14)#+
+        las=2,xlab = "")
+dev.off()
 
 # Box Plot IBU
+png('plots/IBU_boxplot.png')
 par(mar=c(20,5,1,1))
 boxplot(ibu~name.y,data=na.omit(final_beer),col = carto_pal(n=12,name='Safe')
-        ,las=2,xlab = "")+mtext("Breweries", side=1, line=14) #title = "ABV per Brewery"
+        ,las=2,xlab = "")
+dev.off()
+
 
 #_________PLot_the_Average_Size_of-the_Breweries__________________________________
-ave_ounces = final_beer %>% 
+ave_ounces = final_beer %>%  # group all the breweries and take their means
   group_by(name.y) %>%
   summarise(avg = mean(ounces))
 
-ave_ounces = as.data.frame(ave_ounces)
+ave_ounces = as.data.frame(ave_ounces) # converted to dataframe
 
-brewer.pal(n=12,name = 'Paired')
 
+#manually asiigned colors to match
 adj_color = c("#DDCC77", "#999933", "#44AA99", "#AA4499", "#661100", "#88CCEE",
               "#332288", "#888888", "#882255", "#CC6677", "#6699CC", "#117733")
 
+
+png('plots/average_beer.png')
 ggdotchart(ave_ounces, x = "name.y", y = "avg",
-           color = "name.y",                                # Color by groups
-           palette = adj_color,#carto_pal(n=12,name='Safe'),       # 
+           color = "name.y",                            # Color by groups
+           palette = adj_color,                          # shifted colors to match 
            sorting = "descending",                       # Sort value in descending order
            rotate = TRUE,                                # Rotate vertically
            dot.size = 4,                                 # Large dot size
@@ -143,46 +156,42 @@ ggdotchart(ave_ounces, x = "name.y", y = "avg",
            xlab = "Average Ounces",
            ggtheme = theme_pubr(legend = 'none')                        # ggplot2 theme
 )+ theme_cleveland()
+dev.off()
 
 #_________Violin_plot_IBU_and_ABV___________________________________________________
 
-abv_df = final_beer[c('abv','name.y')]
+abv_df = final_beer[c('abv','name.y')] # grab the breweries and abv
 names(abv_df) = c('abv',"Breweries")
 
-ibu_df = na.omit(final_beer[c('ibu','name.y')])
+ibu_df = na.omit(final_beer[c('ibu','name.y')]) # grab the breweries and IBU
 names(ibu_df) = c('ibu',"Breweries")
 
-ounce_df = final_beer[c('ounces','name.y')]
+ounce_df = final_beer[c('ounces','name.y')] # grab the ounces and breweries
 names(ounce_df) = c('ounces',"Breweries")
 
+
+png('plots/violin_abv.png')
 ggplot(abv_df,aes(Breweries,abv,fill = Breweries))+geom_violin()+ coord_flip()+ 
   geom_boxplot(width=0.1) + scale_fill_manual(values = carto_pal(n=12,name='Safe'),
                                               breaks = unique(abv_df$Breweries)) +
   theme_pubr(legend = 'right')
+dev.off()
 
-
+png('plots/violin_ibu.png')
 ggplot(ibu_df,aes(Breweries,ibu,fill = Breweries))+geom_violin()+ coord_flip()+ 
   geom_boxplot(width=0.1) + scale_fill_manual(values = carto_pal(n=12,name='Safe'),
                                               breaks = unique(abv_df$Breweries)) +
   theme_pubr(legend = 'right')
+dev.off()
 
+png('plots/violin_ounces.png')
 ggplot(ounce_df,aes(Breweries,ounces,fill = Breweries))+geom_violin()+ coord_flip()+ 
   geom_boxplot(width=0.1) + scale_fill_manual(values = carto_pal(n=12,name='Safe'),
                                               breaks = unique(abv_df$Breweries)) +
   theme_pubr(legend = 'right')
+dev.off()
 
 #_________Circle Packing Plot___________________________________________________
-
-install.packages('packcircles')
-install.packages('cartography')
-
-library(packcircles)
-library(ggplot2)
-library(viridis)
-library(cartography)
-
-# Select Data
-
 
 # Generate the layout. sizetype can be area or radius, following your preference on what to be proportional to value.
 packing <- circleProgressiveLayout(types$Freq, sizetype='area')
@@ -192,8 +201,10 @@ data$text_size <- types$Freq+1000
 t= as.character(data$Var1)
 data$names = gsub(' ', '\n',t)
 data$text_size = c(5,11,4.5,6,5.5,6,8,3.5,4,4,8,5) 
-# Basic color customization
-p <- ggplot() + 
+
+
+png('plots/circle_brewery.png')
+ggplot() + 
   geom_polygon(data = dat.gg, aes(x, y, group = id, fill=as.factor(id)), colour = "black", alpha = 0.6) +
   scale_fill_manual(values =carto_pal(n=12,name='Safe'),breaks = c(5,12,1,6,7,2,10,4,9,3,11,8)) +
   geom_text(data = data, aes(x, y, label = names),size = data$text_size) +
@@ -201,16 +212,16 @@ p <- ggplot() +
   theme_void() + 
   theme(legend.position="none") +
   coord_equal()
+dev.off()
 
-p
-
+png('plots/legend_circle')
 plot(1,1)
 legendCirclesSymbols(pos = "left",
                      var = c(min(data$Freq), max(data$Freq)),
                      inches = 0.2, style = "e",col = 'white',
                      title.txt = 'Number of Unique Beers',cex = 4,
                      title.cex =0.9,values.cex = 0.9,frame = TRUE)
-
+dev.off()
 
 ##___________________California Beer Map_______________________________________
 
@@ -281,7 +292,6 @@ lis_to_df = function(list,Brewery_name){
 bal_df = lis_to_df(Ballast_loc,"Ballast Point Brewing Company")
 gol_df =lis_to_df(Golden_loc,"Golden Road Brewing")
 piz_df = lis_to_df(Pizza_loc, "Pizza Port")
-modern_df = lis_to_df(Modern_loc,'Modern Times')
 tail_df = lis_to_df(Tail_loc,"TailGate Beer")
 hess_df =lis_to_df(Hess_loc,"Hess")
 saint_df = lis_to_df(Saint_loc, "Saint Archer Brewery")
@@ -291,13 +301,9 @@ dude_df =lis_to_df(Dude_loc,"The Dudes' Brewing Company")
 monk_df = lis_to_df(Monkey_loc, "Monkey Paw Pub & Brewery")
 miss_df = lis_to_df(Mission_loc,'Mission Brewery')
 
-library(mapproj)
-library(maps)
-
-
-?map()
-
 #_______________________________________________________________________________
+
+png('plots/co_cal_beer.png')
 map(database= "state",regions = c('CA'), col="#f9e5b0",fill = T, # #f1a662
     xlim = c(-119, -116.5), ylim = c(32.5, 34.3),boundary = T)
 map.axes()	
@@ -308,8 +314,6 @@ points(bal_df$lat,bal_df$long,col = '#DDCC77', cex = 1,pch = 19)
 points(gol_df$lat,gol_df$long,col = '#AA4499', cex = 1,pch = 19)
 #Pizza Port Locations
 points(piz_df$lat,piz_df$long,col = '#882255', cex = 1,pch = 19)
-#Modern Times Beer Location
-points(modern_df$lat,modern_df$long,col = '#332288', cex = 1,pch = 19)
 # TailGate Locations
 points(tail_df$lat,tail_df$long,col = '#6699CC', cex = 1,pch = 19)
 #Hess Locations 
@@ -329,18 +333,10 @@ points(miss_df$lat,miss_df$long,col = '#117733', cex = 1,pch = 19)
 
 points(-117.84997346379632,33.79454772568703,col = 'black',cex =1,pch=19)
 
-
+dev.off()
 ##_______________Beer Type Matrix______________________________________________
-install.packages(c("fastDummies", "recipes",'magrittr'))
 
-library(fastDummies)
-library(recipes)
-library(tidyr)
-library(dplyr)
-library(ggplot2)
-library(magrittr)
-
-type_brew = final_beer[,c('X','style','name.y')]
+type_brew = final_beer[,c('style','name.y')]
 head(type_brew)
 
 types_split = type_brew[grep('/',type_brew$style),]
@@ -380,6 +376,7 @@ names(final_style)  = gsub("style_", "", names(final_style), fixed = TRUE)
 names(final_style) = c('Breweries',names(final_style)[2:23])
 
 
+png('plots/type_matrix.png')
 final_style %>% 
   as.data.frame() %>%
   mutate(id=rownames(.),
@@ -394,14 +391,4 @@ final_style %>%
     panel.grid.major.x = element_blank(),
     panel.grid.minor.x = element_blank()
   )
-
-#_____________extra
-
-
-my_array = t(array(Ballast_loc,dim = c(3,length(Ballast_loc)/3)))
-mydf = as.data.frame(my_array)
-mydf = cbind(mydf,rep('Ballast Point Brewing Company',length(Ballast_loc)))
-names(mydf) = c('Address','long','lat','brewery')
-
-mydf$long = as.numeric(mydf$long)
-mydf$lat = as.numeric(mydf$lat)
+dev.off()
