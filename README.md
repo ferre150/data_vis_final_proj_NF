@@ -31,4 +31,4 @@ Some are used in the final flier edited in canva.
 
 ## Final Details
 
-Images were finalozed and edited in gimp and canva
+Images were finalized and edited in gimp and canva
