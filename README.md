@@ -28,6 +28,7 @@ Some are used in the final flier edited in canva.
  2. Make sure the directory is set to the project folder.
  3. Download required packages.
  4. Run the code.
+ 5. To generate new plots the plots folder needs to be cleared.
 
 ## Final Details
 
