@@ -99,18 +99,6 @@ remove_brewery = c("Butcher's Brewing", 'Claremont Craft Ales',
 final_beer = final_beer[!(final_beer$name.y %in% remove_brewery),]
 
 
-#_________Create_a_waffle_plot_of_the_unique_beers______________________________
-
-# the number of beers per brewery
-types = as.data.frame(table(final_beer$name.y))
-#table(final_beer$style)
-
-# Waffle plot
-
-png('plots/waffle.png')
-waffle(types, rows = 7,colors = carto_pal(n=12,name='Safe'))
-dev.off()
-
 #_________Create_a_box_plot_of_the_IBU_and_abv__________________________________
 
 # Cast the IBU to numeric
